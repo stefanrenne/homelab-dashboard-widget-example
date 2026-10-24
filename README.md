@@ -40,15 +40,17 @@ Pin a release with `#v1.0.0` instead.
 | `i18n.json` | no | Labels per language (`en`, `nl`, `fr`, `de`, `es`) |
 | `assets/` | no | Static files for `client.js`, served at `/widgets/<id>/assets/` |
 | `tests/` | | `node:test` against a fake API, through the same `ctx` the dashboard passes |
+| `scripts/rename.mjs` | | `npm run rename -- <id>`: gives the template your widget's id |
 | `.github/workflows/ci.yml` | | Tests on every push; a release for a tag `vX.Y.Z` |
 | `.github/dependabot.yml` | | Weekly grouped update PRs for the CI actions and the test tools |
 | `.github/workflows/dependabot-automerge.yml` | | Merges a Dependabot PR once CI passed on it |
 
 ## Make it your own
 
-1. Pick a unique `id` in `widget.yaml` (lowercase, it becomes `type:` in `services.yaml`) and
-   rename the custom element in `client.js` to `hd-<id>`. Two widgets with the same id cannot
-   both be installed: the dashboard keeps the first.
+1. Pick a unique id (lowercase, it becomes `type:` in `services.yaml`) and run
+   `npm run rename -- <id> --name "Display name"`: it renames `example-counter` in
+   `widget.yaml`, `client.js` (`hd-<id>`), `package.json`, this README and the tests. Two widgets
+   with the same id cannot both be installed: the dashboard keeps the first.
 2. Set `name`, `description` and the `options`. Mark every key, token or password
    `secret: true`: secret options reach `server.js` only, never the browser.
 3. Write `server.js`. Import only `node:` built-ins; the dashboard loads the file as it is,
