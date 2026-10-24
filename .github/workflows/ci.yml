@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch: # dependabot-automerge.yml starts it on main after a merge
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+
+  # A tag vX.Y.Z becomes a GitHub release. The dashboard's `#latest` picks the highest such tag,
+  # so the tag must match the version in widget.yaml.
+  release:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the tag against widget.yaml
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          manifest=$(sed -n 's/^version: *\([^ ]*\).*/\1/p' widget.yaml)
+          if [ "$version" != "$manifest" ]; then echo "::error::tag $GITHUB_REF_NAME but widget.yaml says $manifest"; exit 1; fi
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "::error::CHANGELOG.md has no section for $version"; exit 1; fi
+          printf '\n```yaml\nplugins:\n  - source: git+https://github.com/%s#%s\n```\n' "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" >> notes.md
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
