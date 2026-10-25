@@ -24,29 +24,44 @@ jobs:
 
   # A tag vX.Y.Z becomes a GitHub release. The dashboard's `#latest` picks the highest such tag,
   # so the tag must match the version in widget.yaml.
+  # A tag vX.Y.Z becomes a GitHub release. Run by hand on main (also by dependabot-automerge.yml),
+  # it releases widget.yaml's version and creates the tag, unless that version is out already.
   release:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - name: Check the tag against widget.yaml
+      - name: The tag, checked against widget.yaml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
           manifest=$(sed -n 's/^version: *\([^ ]*\).*/\1/p' widget.yaml)
-          if [ "$version" != "$manifest" ]; then echo "::error::tag $GITHUB_REF_NAME but widget.yaml says $manifest"; exit 1; fi
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            tag="v$manifest"
+            if gh release view "$tag" >/dev/null 2>&1; then echo "$tag is released already: nothing to release"; echo "SKIP=true" >> "$GITHUB_ENV"; exit 0; fi
+          else
+            tag="$GITHUB_REF_NAME"
+          fi
+          if [ "${tag#v}" != "$manifest" ]; then echo "::error::tag $tag but widget.yaml says $manifest"; exit 1; fi
+          echo "TAG=$tag" >> "$GITHUB_ENV"
       - name: Release notes from CHANGELOG.md
+        if: env.SKIP != 'true'
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${TAG#v}"
           awk -v v="$version" '
             $0 ~ "^## \\[" v "\\]" { on = 1; next }
             on && /^## \[/ { exit }
             on { print }
           ' CHANGELOG.md > notes.md
           if [ ! -s notes.md ]; then echo "::error::CHANGELOG.md has no section for $version"; exit 1; fi
-          printf '\n```yaml\nplugins:\n  - source: git+https://github.com/%s#%s\n```\n' "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" >> notes.md
-      - env:
+          printf '\n```yaml\nplugins:\n  - source: git+https://github.com/%s#%s\n```\n' "$GITHUB_REPOSITORY" "$TAG" >> notes.md
+      - if: env.SKIP != 'true'
+        env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+        # a pushed tag must exist; by hand, the release creates the tag on this commit
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then target=(--target "$GITHUB_SHA"); else target=(--verify-tag); fi
+          gh release create "$TAG" --title "$TAG" --notes-file notes.md "${target[@]}"

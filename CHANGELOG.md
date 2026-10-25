@@ -4,6 +4,8 @@ All user-visible changes. The format follows [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-25
+
 ### Added
 - `npm run rename -- <id>`: gives the template your widget's id everywhere.
 

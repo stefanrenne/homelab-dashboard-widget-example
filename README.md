@@ -41,7 +41,7 @@ Pin a release with `#v1.0.0` instead.
 | `assets/` | no | Static files for `client.js`, served at `/widgets/<id>/assets/` |
 | `tests/` | | `node:test` against a fake API, through the same `ctx` the dashboard passes |
 | `scripts/rename.mjs` | | `npm run rename -- <id>`: gives the template your widget's id |
-| `.github/workflows/ci.yml` | | Tests on every push; a release for a tag `vX.Y.Z` |
+| `.github/workflows/ci.yml` | | Tests on every push; a release for a tag `vX.Y.Z` (or a run by hand on `main`) |
 | `.github/dependabot.yml` | | Weekly grouped update PRs for the CI actions and the test tools |
 | `.github/workflows/dependabot-automerge.yml` | | Merges a Dependabot PR once CI passed on it |
 
@@ -81,7 +81,9 @@ npm install && npm test
 
 1. Bump `version` in `widget.yaml` and `package.json` (a test checks they match).
 2. Move the `## [Unreleased]` notes in `CHANGELOG.md` under `## [x.y.z] - YYYY-MM-DD`.
-3. Commit, then `git tag -a vx.y.z -m vx.y.z` and `git push --follow-tags`.
+3. Commit, then `git tag -a vx.y.z -m vx.y.z` and `git push --follow-tags`. Or push `main` and
+   run the CI workflow by hand on `main` (**Actions > CI > Run workflow**): it releases
+   `widget.yaml`'s version and creates the tag, and does nothing for a version that is out.
 
 CI checks that the tag matches `widget.yaml` and creates the GitHub release. Users on `#latest`
 get it on their next plugin update. To publish on npm as well: `npm publish`, and users install

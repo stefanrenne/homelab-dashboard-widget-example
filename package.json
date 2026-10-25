@@ -1,6 +1,6 @@
 {
   "name": "hd-widget-example-counter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Example third-party widget for homelab-dashboard",
   "keywords": ["homelab-dashboard-widget"],
