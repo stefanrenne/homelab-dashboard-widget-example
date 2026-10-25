@@ -85,3 +85,12 @@ test('a failing API becomes a short error without the key', async () => {
   answer = { status: 200, body: { other: 1 } };
   await assert.rejects(widget.fetch(ctx()), /no number in field "count"/);
 });
+
+test('action: a button press starts the change again from the next value', async () => {
+  const cache = new Map();
+  answer = { status: 200, body: { count: 10 } };
+  await widget.fetch(ctx({}, cache));
+  assert.deepEqual(await widget.action(ctx({}, cache)), { status: 'ok', output: 'The change starts again from the next value.' });
+  const out = await widget.fetch(ctx({}, cache));
+  assert.equal(out.blocks.find((b) => b.key === 'change').value, null);
+});
