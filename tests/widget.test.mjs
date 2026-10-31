@@ -79,6 +79,18 @@ test('reads another field when asked', async () => {
   assert.equal(out.blocks[0].value, 7);
 });
 
+test('attributes: the declared public values, full once the number reaches max', async () => {
+  answer = { status: 200, body: { count: 99 } };
+  const below = await widget.fetch(ctx());
+  assert.deepEqual(below.attributes, { value: 99, full: false });
+  answer = { status: 200, body: { count: 100 } };
+  const at = await widget.fetch(ctx());
+  assert.deepEqual(at.attributes, { value: 100, full: true });
+  for (const [name, value] of Object.entries(at.attributes)) {
+    assert.equal(typeof value, manifest.attributes[name]?.type, `${name} is declared with its type`);
+  }
+});
+
 test('a failing API becomes a short error without the key', async () => {
   answer = { status: 401, body: {} };
   await assert.rejects(widget.fetch(ctx({ key: 'secret-key' })), (err) => /answered 401/.test(err.message) && !err.message.includes('secret-key'));

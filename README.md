@@ -24,6 +24,7 @@ plugins:
           url: http://app.lan/api/        # the widget reads <url>stats.json
           key: "{{HD_VAR_APP_KEY}}"       # optional, sent as a Bearer token
           field: count                    # the number to show (default: count)
+        filter: widget.full == false      # optional: hide the card until the number reaches max
 ```
 
 `#latest` installs the newest release tag and the dashboard locks it in
@@ -34,7 +35,7 @@ Pin a release with `#v1.0.0` instead.
 
 | File | Required | What |
 |---|---|---|
-| `widget.yaml` | yes | Manifest: id, version, apiVersion, refresh, options schema |
+| `widget.yaml` | yes | Manifest: id, version, apiVersion, refresh, options schema, public attributes |
 | `server.js` | no | Fetches the data on the server; may use secret options |
 | `client.js` | no | Custom rendering as a Web Component `hd-<id>`; without it the dashboard renders `blocks` |
 | `i18n.json` | no | Labels per language (`en`, `nl`, `fr`, `de`, `es`) |
@@ -58,7 +59,13 @@ Pin a release with `#v1.0.0` instead.
    card, and "answered 401/403/404" gets advice for the user.
 4. Return `blocks` whose labels are keys in `i18n.json`, with a translation in every language.
    Delete `client.js` if the standard blocks are enough.
-5. Update `package.json` (name, repository) and this README.
+5. Optionally publish `attributes`: public values (boolean, number, string or null) declared under
+   `attributes:` in `widget.yaml` and returned as `attributes` from `fetch`, so users can
+   [hide a service's card](https://stefanrenne.github.io/homelab-dashboard/configuration/services.html#filtering-services)
+   with `filter:` (`filter: widget.full == false`). The dashboard keeps only declared names of
+   the declared type; never put a secret in one. `filter:` needs dashboard 0.12.0 or newer; older
+   dashboards ignore attributes.
+6. Update `package.json` (name, repository) and this README.
 
 ## Develop
 
