@@ -63,8 +63,7 @@ Pin a release with `#v1.0.0` instead.
    `attributes:` in `widget.yaml` and returned as `attributes` from `fetch`, so users can
    [hide a service's card](https://stefanrenne.github.io/homelab-dashboard/configuration/services.html#filtering-services)
    with `filter:` (`filter: widget.full == false`). The dashboard keeps only declared names of
-   the declared type; never put a secret in one. `filter:` needs dashboard 0.12.0 or newer; older
-   dashboards ignore attributes.
+   the declared type; never put a secret in one.
 6. Update `package.json` (name, repository) and this README.
 
 ## Develop
